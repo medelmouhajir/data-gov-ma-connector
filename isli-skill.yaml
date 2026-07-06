@@ -1,0 +1,314 @@
+isli_version: "2.0"
+
+id: data-gov-ma-connector
+name: "National Open Data Portal Connector — Morocco"
+description: "Read-only connector to data.gov.ma, Morocco's national open data portal (CKAN). Search datasets, browse resources, and discover demographic, economic, telecom, and sector data for market research and feasibility studies. No authentication required against the upstream API."
+version: "1.1.0"
+author: "ISLI AI"
+category: "data_connector"
+tags:
+  - morocco
+  - open-data
+  - ckan
+  - market-research
+  - public-data
+  - connector
+
+runtime:
+  port: 8000
+  build:
+    context: .
+    dockerfile: Dockerfile
+
+auth:
+  type: internal_jwt
+
+tools:
+  - name: search_datasets
+    description: "Search datasets on data.gov.ma. Supports free-text queries, filters by organization, group/category, tags, and format, plus sorting and pagination."
+    endpoint: search_datasets
+    method: POST
+    parameters:
+      type: object
+      properties:
+        q:
+          type: string
+          description: "Free-text search query (CKAN query syntax)."
+          default: "*:*"
+        rows:
+          type: integer
+          description: "Maximum number of results to return (max 1000)."
+          default: 20
+          maximum: 1000
+        start:
+          type: integer
+          description: "Offset for pagination."
+          default: 0
+        sort:
+          type: string
+          description: "Sort order, e.g. score desc, title_string asc, metadata_modified desc."
+          default: "score desc"
+        organization:
+          type: string
+          description: "Filter by publisher organization name (e.g. anrt, ammc, bank-al-maghrib)."
+        group:
+          type: string
+          description: "Filter by group/category name (e.g. economie, telecom, agriculture)."
+        tags:
+          type: array
+          items:
+            type: string
+          description: "Filter by tag names."
+        format:
+          type: string
+          description: "Filter by resource format (e.g. CSV, XLSX, JSON, GeoJSON)."
+        fields:
+          type: ["array", "string"]
+          description: "CKAN field projection. Pass a list of field names, 'full' for the complete CKAN record, or omit for the default lightweight set."
+          items:
+            type: string
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: []
+
+  - name: get_dataset
+    description: "Fetch full metadata for a dataset by its name or id."
+    endpoint: get_dataset
+    method: POST
+    parameters:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Dataset name (slug) or CKAN package id."
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: ["id"]
+
+  - name: list_resources
+    description: "List downloadable resources for a dataset, optionally filtered by format."
+    endpoint: list_resources
+    method: POST
+    parameters:
+      type: object
+      properties:
+        dataset_id:
+          type: string
+          description: "Dataset name (slug) or CKAN package id."
+        format:
+          type: string
+          description: "Filter by resource format."
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: ["dataset_id"]
+
+  - name: get_resource
+    description: "Fetch metadata for a single CKAN resource by id."
+    endpoint: get_resource
+    method: POST
+    parameters:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "CKAN resource id."
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: ["id"]
+
+  - name: search_resources
+    description: "Search across all downloadable resources on the portal. CKAN resource_search query format, e.g. name:population or format:CSV."
+    endpoint: search_resources
+    method: POST
+    parameters:
+      type: object
+      properties:
+        query:
+          type: string
+          description: "CKAN resource_search query (e.g. name:population, format:XLSX, url:data.gov.ma)."
+        limit:
+          type: integer
+          description: "Maximum resources to return."
+          default: 100
+          maximum: 1000
+        offset:
+          type: integer
+          description: "Offset for pagination."
+          default: 0
+        order_by:
+          type: string
+          description: "Sort order."
+          default: "score desc"
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: ["query"]
+
+  - name: search_by_organization
+    description: "List datasets published by a specific organization."
+    endpoint: search_by_organization
+    method: POST
+    parameters:
+      type: object
+      properties:
+        organization:
+          type: string
+          description: "Organization name/slug (e.g. anrt, ammc)."
+        rows:
+          type: integer
+          default: 20
+          maximum: 1000
+        start:
+          type: integer
+          default: 0
+        sort:
+          type: string
+          default: "metadata_modified desc"
+        fields:
+          type: ["array", "string"]
+          description: "CKAN field projection. Pass a list of field names, 'full' for the complete CKAN record, or omit for the default lightweight set."
+          items:
+            type: string
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: ["organization"]
+
+  - name: search_by_group
+    description: "List datasets belonging to a specific group/category."
+    endpoint: search_by_group
+    method: POST
+    parameters:
+      type: object
+      properties:
+        group:
+          type: string
+          description: "Group/category name/slug (e.g. economie, agriculture)."
+        rows:
+          type: integer
+          default: 20
+          maximum: 1000
+        start:
+          type: integer
+          default: 0
+        sort:
+          type: string
+          default: "score desc"
+        fields:
+          type: ["array", "string"]
+          description: "CKAN field projection. Pass a list of field names, 'full' for the complete CKAN record, or omit for the default lightweight set."
+          items:
+            type: string
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: ["group"]
+
+  - name: list_organizations
+    description: "List publisher organizations on the portal, optionally sorted by dataset count."
+    endpoint: list_organizations
+    method: POST
+    parameters:
+      type: object
+      properties:
+        all_fields:
+          type: boolean
+          description: "Return full metadata for each organization."
+          default: true
+        sort:
+          type: string
+          description: "Sort key: package_count, name, or title."
+          default: "package_count"
+        limit:
+          type: integer
+          default: 100
+          maximum: 1000
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: []
+
+  - name: list_groups
+    description: "List thematic groups/categories on the portal."
+    endpoint: list_groups
+    method: POST
+    parameters:
+      type: object
+      properties:
+        all_fields:
+          type: boolean
+          description: "Return full metadata for each group."
+          default: true
+        limit:
+          type: integer
+          default: 100
+          maximum: 1000
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: []
+
+  - name: list_tags
+    description: "List dataset tags used on the portal."
+    endpoint: list_tags
+    method: POST
+    parameters:
+      type: object
+      properties:
+        query:
+          type: string
+          description: "Optional prefix to autocomplete tag names."
+        limit:
+          type: integer
+          default: 100
+          maximum: 1000
+      required: []
+
+  - name: get_organization
+    description: "Fetch full metadata for an organization by name or id."
+    endpoint: get_organization
+    method: POST
+    parameters:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Organization name/slug or id."
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: ["id"]
+
+  - name: get_group
+    description: "Fetch full metadata for a group/category by name or id, including its datasets."
+    endpoint: get_group
+    method: POST
+    parameters:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Group name/slug or id."
+        include_datasets:
+          type: boolean
+          description: "Include datasets in the response."
+          default: true
+        use_cache:
+          type: boolean
+          description: "Whether to use the in-memory cache. Default true."
+          default: true
+      required: ["id"]
