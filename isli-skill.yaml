@@ -12,7 +12,6 @@ tags:
   - ckan
   - market-research
   - public-data
-  - connector
 
 runtime:
   port: 8000
