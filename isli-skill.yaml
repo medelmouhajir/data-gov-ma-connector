@@ -5,7 +5,7 @@ name: "National Open Data Portal Connector — Morocco"
 description: "Read-only connector to data.gov.ma, Morocco's national open data portal (CKAN). Search datasets, browse resources, and discover demographic, economic, telecom, and sector data for market research and feasibility studies. No authentication required against the upstream API."
 version: "1.1.0"
 author: "ISLI AI"
-category: "data_connector"
+category: "database"
 tags:
   - morocco
   - open-data
